@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rag-defence-poc"
+version = "0.1.0"
+description = "Citation-locked RAG over open Dutch government / EU / NATO policy texts"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "chromadb>=0.5.0",
+    "sentence-transformers>=3.0.0",
+    "torch",
+    "pymupdf>=1.24.0",
+    "pyyaml>=6.0.0",
+    "httpx>=0.27.0",
+    "numpy>=1.26.0",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.0.0"]
+
+[project.scripts]
+rag-ingest = "rag_defence_poc.ingest_cli:main"
+rag-serve = "rag_defence_poc.api:run"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rag_defence_poc"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/rag_defence_poc", "README.md", "corpus"]

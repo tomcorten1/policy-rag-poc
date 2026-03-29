@@ -1,0 +1,23 @@
+# Index and runtime
+data/
+logs/
+*.chroma
+
+# Large / user-supplied corpus (add your own PDFs here)
+corpus/raw/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+.env
+*.egg-info/
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/

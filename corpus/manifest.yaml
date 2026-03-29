@@ -1,0 +1,18 @@
+# Paden relatief t.o.v. projectroot (waar je `rag-ingest` draait).
+# Bestanden onder corpus/raw/ staan niet in git (zie .gitignore); na clone:
+#   ./scripts/download_corpus.sh
+#
+documents:
+  - doc_id: defensie-strategie-ds-ai-2023-2027
+    path: corpus/raw/defensie-strategie-ds-ai-2023-2027.pdf
+    title: Defensie Strategie Data Science en AI 2023–2027
+    source_url: https://open.overheid.nl/documenten/d49f42ca-181b-4e2f-9986-b412de40f2f5/file
+    doc_type: defensie
+    language: nl
+
+  - doc_id: overheidsbrede-handreiking-generatieve-ai
+    path: corpus/raw/overheidsbrede-handreiking-generatieve-ai.pdf
+    title: Overheidsbrede handreiking voor de verantwoorde inzet van generatieve AI
+    source_url: https://open.overheid.nl/documenten/9c273b71-cebb-4e11-b06f-fa20f7b4b90e/file
+    doc_type: rijk
+    language: nl
