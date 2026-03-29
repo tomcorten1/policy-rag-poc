@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Citation-locked policy RAG</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4d;
+      --text: #e6edf3;
+      --muted: #8b9cb3;
+      --accent: #3d8bfd;
+      --warn: #d4a017;
+      --danger: #f85149;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 3rem;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 0.5rem; }
+    p.lead { color: var(--muted); font-size: 0.9rem; margin: 0 0 1.25rem; }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    textarea {
+      width: 100%;
+      min-height: 6rem;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      resize: vertical;
+    }
+    textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .row { display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-top: 0.75rem; }
+    select {
+      padding: 0.5rem 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+    }
+    button {
+      padding: 0.55rem 1rem;
+      border: none;
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      font: inherit;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .banner {
+      margin-top: 1rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid var(--warn);
+      background: rgba(212, 160, 23, 0.12);
+      color: #e8c547;
+      font-size: 0.9rem;
+    }
+    .banner[hidden] { display: none; }
+    .error {
+      margin-top: 1rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid var(--danger);
+      background: rgba(248, 81, 73, 0.1);
+      color: #ff8b87;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+    }
+    .error[hidden] { display: none; }
+    section { margin-top: 1.5rem; }
+    section h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 0.5rem; }
+    .answer {
+      white-space: pre-wrap;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      font-size: 0.95rem;
+    }
+    .citations { list-style: none; padding: 0; margin: 0; }
+    .citations li {
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      background: var(--surface);
+    }
+    .citations a { color: var(--accent); }
+    .citations .meta { font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; }
+    details { margin-top: 1rem; font-size: 0.85rem; color: var(--muted); }
+    details summary { cursor: pointer; color: var(--muted); }
+    details pre { margin: 0.5rem 0 0; overflow: auto; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+  <h1>Citation-locked policy RAG</h1>
+  <p class="lead">Questions are answered from ingested corpus chunks only. Same API as <code>POST /ask</code>.</p>
+
+  <form id="form">
+    <label for="q">Question</label>
+    <textarea id="q" name="question" required placeholder="Your question…" autocomplete="off"></textarea>
+    <div class="row">
+      <div>
+        <label for="lang">Language</label>
+        <select id="lang" name="language">
+          <option value="nl" selected>nl</option>
+          <option value="en">en</option>
+        </select>
+      </div>
+      <button type="submit" id="submit">Ask</button>
+    </div>
+  </form>
+
+  <div id="err" class="error" hidden></div>
+  <div id="refused" class="banner" hidden role="status">Refused: no sufficiently similar passages in the corpus (or similarity gate).</div>
+
+  <section id="result" hidden>
+    <h2>Answer</h2>
+    <div id="answer" class="answer"></div>
+  </section>
+
+  <section id="citeSection" hidden>
+    <h2>Citations</h2>
+    <ul id="citations" class="citations"></ul>
+  </section>
+
+  <details id="details" hidden>
+    <summary>Retrieval details</summary>
+    <pre id="scores"></pre>
+  </details>
+
+  <script>
+    (function () {
+      var form = document.getElementById("form");
+      var q = document.getElementById("q");
+      var lang = document.getElementById("lang");
+      var submit = document.getElementById("submit");
+      var err = document.getElementById("err");
+      var refused = document.getElementById("refused");
+      var result = document.getElementById("result");
+      var answerEl = document.getElementById("answer");
+      var citeSection = document.getElementById("citeSection");
+      var citations = document.getElementById("citations");
+      var details = document.getElementById("details");
+      var scores = document.getElementById("scores");
+
+      function hideErr() {
+        err.hidden = true;
+        err.textContent = "";
+      }
+
+      function showErr(msg) {
+        err.textContent = msg;
+        err.hidden = false;
+      }
+
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+        hideErr();
+        refused.hidden = true;
+        result.hidden = true;
+        citeSection.hidden = true;
+        details.hidden = true;
+        citations.innerHTML = "";
+
+        var body = JSON.stringify({
+          question: q.value.trim(),
+          language: lang.value
+        });
+
+        submit.disabled = true;
+
+        fetch("/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: body
+        })
+          .then(function (res) {
+            return res.json().then(function (data) {
+              if (!res.ok) {
+                var detail = data.detail;
+                if (typeof detail === "string") throw new Error(detail);
+                if (Array.isArray(detail)) {
+                  throw new Error(detail.map(function (d) { return d.msg || JSON.stringify(d); }).join("; "));
+                }
+                throw new Error(res.status + " " + res.statusText);
+              }
+              return data;
+            });
+          })
+          .then(function (data) {
+            answerEl.textContent = data.answer || "";
+            result.hidden = false;
+            refused.hidden = !data.refused;
+            if (data.citations && data.citations.length) {
+              citeSection.hidden = false;
+              data.citations.forEach(function (c) {
+                var li = document.createElement("li");
+                var title = document.createElement("div");
+                var link = document.createElement("a");
+                link.href = c.url || "#";
+                link.target = "_blank";
+                link.rel = "noopener noreferrer";
+                link.textContent = c.title || c.doc_id || "(untitled)";
+                title.appendChild(link);
+                li.appendChild(title);
+                var meta = document.createElement("div");
+                meta.className = "meta";
+                var parts = [];
+                if (c.doc_id) parts.push("doc: " + c.doc_id);
+                if (c.chunk_id) parts.push("chunk: " + c.chunk_id);
+                if (c.page != null && c.page !== "") parts.push("page: " + c.page);
+                meta.textContent = parts.join(" · ");
+                li.appendChild(meta);
+                citations.appendChild(li);
+              });
+            } else {
+              citeSection.hidden = true;
+            }
+            if (data.retrieval_scores && data.retrieval_scores.length) {
+              details.hidden = false;
+              scores.textContent = JSON.stringify(data.retrieval_scores, null, 2);
+            }
+          })
+          .catch(function (e) {
+            showErr(e.message || String(e));
+          })
+          .finally(function () {
+            submit.disabled = false;
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

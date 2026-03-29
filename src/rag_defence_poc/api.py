@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from rag_defence_poc.audit import append_audit
@@ -19,6 +21,8 @@ from rag_defence_poc.retrieve import RetrievedChunk, retrieve
 from rag_defence_poc.store import get_collection
 
 app = FastAPI(title="Citation-locked policy RAG", version="0.1.0")
+
+_STATIC_INDEX = Path(__file__).resolve().parents[2] / "static" / "index.html"
 
 _embedder: Embedder | None = None
 _collection = None
@@ -164,6 +168,13 @@ def ask(req: AskRequest) -> AskResponse:
         refused=False,
         retrieval_scores=scores,
     )
+
+
+@app.get("/")
+def index() -> FileResponse:
+    if not _STATIC_INDEX.is_file():
+        raise HTTPException(status_code=404, detail="static/index.html not found")
+    return FileResponse(_STATIC_INDEX, media_type="text/html; charset=utf-8")
 
 
 def run() -> None:

@@ -33,6 +33,8 @@ rag-serve
 # or: uvicorn rag_defence_poc.api:app --host 127.0.0.1 --port 8000
 ```
 
+**Browser UI:** open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) — a minimal page posts to the same `POST /ask` endpoint (no extra build step). You still need a built index (`rag-ingest --reset`) and a working LLM backend (Ollama or OpenAI), same as below.
+
 Ask a question:
 
 ```bash
