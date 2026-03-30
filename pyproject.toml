@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "rag-defence-poc"
+name = "policy-rag-poc"
 version = "0.1.0"
 description = "Citation-locked RAG over open Dutch government / EU / NATO policy texts"
 readme = "README.md"

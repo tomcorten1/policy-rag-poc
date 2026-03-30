@@ -1,10 +1,10 @@
 # Corpus
 
-Standaardmanifest bevat alleen **PDF’s** van **Open Overheid** (Defensie DS/AI-strategie + overheidsbrede handreiking generatieve AI). Ingest gebruikt **PyMuPDF** per pagina.
+Standaardmanifest bevat alleen **PDF's** van **Open Overheid** (een overheids-DS/AI-strategie + overheidsbrede handreiking generatieve AI). Ingest gebruikt **PyMuPDF** per pagina.
 
 ## Bestanden ophalen
 
-PDF’s staan onder **`corpus/raw/`** (gitignored). Na een clone:
+PDF's staan onder **`corpus/raw/`** (gitignored). Na een clone:
 
 ```bash
 ./scripts/download_corpus.sh
@@ -13,7 +13,7 @@ rag-ingest --reset
 
 ## Meer documenten
 
-Zet PDF’s in `corpus/raw/`, voeg entries toe in `corpus/manifest.yaml`, en draai opnieuw `rag-ingest --reset`. Ondersteunde formaten in code: **`.pdf`**, **`.md`**, **`.txt`** (geen HTML).
+Zet PDF's in `corpus/raw/`, voeg entries toe in `corpus/manifest.yaml`, en draai opnieuw `rag-ingest --reset`. Ondersteunde formaten in code: **`.pdf`**, **`.md`**, **`.txt`** (geen HTML).
 
 ### EUR-Lex / EU-wettekst
 

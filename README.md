@@ -2,7 +2,7 @@
 
 Small **Python** stack: manifest-driven ingest → **Chroma** (cosine) + **sentence-transformers** embeddings → **FastAPI** `/ask` with **citation-only** prompts and a **similarity gate**. Optional **Ollama** or **OpenAI** for generation.
 
-This is a **portfolio / interview** demo: answers are grounded in ingested open publications. The default manifest uses two **Open Overheid PDF’s** (Defensie DS/AI-strategie + handreiking generatieve AI); see [`corpus/README.md`](corpus/README.md). Source files live under **`corpus/raw/`** (gitignored); fetch them with:
+Answers are grounded in ingested open publications only. The default manifest includes two **Open Overheid PDFs** (a government DS/AI strategy + a generative AI guidance document); see [`corpus/README.md`](corpus/README.md). Source files live under **`corpus/raw/`** (gitignored); fetch them with:
 
 ```bash
 ./scripts/download_corpus.sh
@@ -13,7 +13,7 @@ Optional: `corpus/sample_documents/policy_demo_nl.md` is a tiny **fictitious** f
 ## Quick start
 
 ```bash
-cd rag-defence-poc
+cd policy-rag-poc
 python3.11 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e ".[openai]"
@@ -40,7 +40,7 @@ Ask a question:
 ```bash
 curl -s -X POST http://127.0.0.1:8000/ask \
   -H "Content-Type: application/json" \
-  -d '{"question":"Welke vier defensiebrede doelstellingen noemt de DS/AI-strategie?","language":"nl"}'
+  -d '{"question":"Welke doelstellingen noemt de strategie voor data en AI?","language":"nl"}'
 ```
 
 ### LLM backend
@@ -90,13 +90,13 @@ After `./scripts/download_corpus.sh` and `rag-ingest --reset`:
 
 | # | Question (NL) | Expected source |
 |---|-----------------|-----------------|
-| 1 | Welke vier defensiebrede doelstellingen noemt de DS/AI-strategie? | Defensie-strategie PDF |
-| 2 | Welke vijf toepassingsgebieden worden genoemd? | idem |
-| 3 | Wat wil Defensie in 2027 bereiken volgens de strategie? | idem |
-| 4 | Welke randvoorwaarden noemt de strategie voor data governance? | idem |
-| 5 | Welke thema’s behandelt de handreiking voor generatieve AI? | Handreiking-PDF |
+| 1 | Welke doelstellingen noemt de strategie voor data en AI? | Strategie PDF |
+| 2 | Welke toepassingsgebieden worden in de strategie beschreven? | idem |
+| 3 | Welke randvoorwaarden noemt de strategie voor data governance? | idem |
+| 4 | Welke thema's behandelt de handreiking voor generatieve AI? | Handreiking PDF |
+| 5 | Wat is een voorbeeld van een vraag die buiten het corpus valt? | (verwacht: refusal) |
 
-Voeg zelf extra PDF’s toe (bv. AI Act van EUR-Lex) voor EU-juridische detailvragen; zie [`corpus/README.md`](corpus/README.md).
+Voeg zelf extra PDF's toe (bv. AI Act van EUR-Lex) voor EU-juridische detailvragen; zie [`corpus/README.md`](corpus/README.md).
 
 **Pass criteria:** cited chunks come from the expected document; no unsupported factual claims; refusal on out-of-corpus questions is acceptable.
 
